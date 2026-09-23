@@ -14,7 +14,21 @@
   html,body{margin:0;padding:0;height:100%;background:var(--bg);color:var(--fg);
     font:13px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
     overflow:hidden}
-  .wrap{display:flex;gap:12px;padding:12px;height:100vh;align-items:stretch}
+  .wrap{display:flex;flex-direction:column;gap:0;padding:0;height:100vh}
+.toprow{display:flex;gap:12px;padding:12px;flex:1 1 auto;min-height:140px;align-items:stretch}
+.vgrip{flex:0 0 6px;cursor:col-resize;border-radius:3px;background:var(--line);align-self:stretch;transition:background .12s}
+.vgrip:hover,.vgrip.drag{background:var(--acc)}
+.hgrip{flex:0 0 7px;cursor:row-resize;background:var(--line);transition:background .12s;position:relative}
+.hgrip:hover,.hgrip.drag{background:var(--acc)}
+.hgrip::after{content:'';position:absolute;left:50%;top:2px;width:44px;height:3px;margin-left:-22px;border-radius:2px;background:#5a6472}
+.bottom{flex:0 0 300px;min-height:0;overflow:hidden;display:flex;flex-direction:column;background:var(--panel);border-top:1px solid var(--line)}
+.bottom.collapsed{flex-basis:34px!important}
+.btabs{display:flex;align-items:center;gap:2px;padding:5px 10px 0;flex:0 0 auto;border-bottom:1px solid var(--line)}
+.btab{padding:6px 12px;font-size:12px;font-weight:600;color:var(--dim);cursor:pointer;border:1px solid transparent;border-bottom:none;border-radius:6px 6px 0 0;background:none}
+.btab:hover{color:var(--text)}
+.btab.on{color:var(--text);background:var(--card);border-color:var(--line)}
+.bbody{flex:1 1 auto;overflow:auto;padding:10px 12px 14px;min-height:0}
+.bottom.collapsed .bbody{display:none}
   .side{width:340px;flex:0 0 340px;overflow-y:auto;overflow-x:hidden}
   .card{background:var(--panel);border:1px solid var(--line);border-radius:8px;
     padding:11px;margin-bottom:10px}
@@ -120,7 +134,38 @@
   .vstable .xbtn:hover{color:#e88}
   .vssec{margin-top:10px}
   .vssec .mlabel{margin-bottom:2px}
-  .vsscroll{max-height:280px;overflow:auto;border:1px solid var(--line);border-radius:6px}
+  /* Carrier colors lifted from the 'Postage Rates' tab header in
+   '2026 Zip Zone Comparisons from Multi Origins' so the tool reads the same
+   way the sheet does. */
+.car{display:inline-block;padding:1px 6px;border-radius:4px;font-size:10px;
+  font-weight:700;letter-spacing:.02em;white-space:nowrap}
+.car-usps  {background:#073763;color:#fff}
+.car-dhl   {background:#f1c232;color:#222}
+.car-fedex {background:#351c75;color:#fff}
+.car-ups   {background:#783f04;color:#fff}
+.car-amazon{background:#ffc267;color:#222}
+tr.crow-usps   td:first-child{box-shadow:inset 3px 0 0 #073763}
+tr.crow-dhl    td:first-child{box-shadow:inset 3px 0 0 #f1c232}
+tr.crow-fedex  td:first-child{box-shadow:inset 3px 0 0 #351c75}
+tr.crow-ups    td:first-child{box-shadow:inset 3px 0 0 #783f04}
+tr.crow-amazon td:first-child{box-shadow:inset 3px 0 0 #ffc267}
+.bbody table{width:100%;border-collapse:collapse;font-size:11px}
+.bbody th{position:sticky;top:0;background:var(--panel);z-index:2;text-align:right;
+  padding:5px 7px;border-bottom:1px solid var(--line);font-size:10px;
+  text-transform:uppercase;letter-spacing:.04em;color:var(--dim);white-space:nowrap}
+.bbody th:first-child,.bbody td:first-child{text-align:left}
+.bbody td{padding:4px 7px;border-bottom:1px solid #20242c;text-align:right;
+  white-space:nowrap;font-variant-numeric:tabular-nums}
+.bbody tr:hover td{background:#171b22}
+.cheap{color:#7ee787;font-weight:700}
+.savepos{color:#7ee787}
+.saveneg{color:#ff9f9f}
+.hbar{display:inline-block;height:9px;border-radius:2px;vertical-align:middle;
+  background:var(--acc);min-width:1px}
+.zcell{position:relative}
+.bsec{margin-bottom:16px}
+.bsec>.mlabel{margin-bottom:5px}
+.vsscroll{max-height:280px;overflow:auto;border:1px solid var(--line);border-radius:6px}
   .cityhint{color:var(--dim);font-size:10.5px;margin-top:6px}
   /* Next-best hint: DOM marker so it stacks ABOVE city labels, with a visible
      double pulse. As a GL circle it was buried under the label layer. */
@@ -180,7 +225,8 @@
 <div id="err" class="err"></div>
 
 <div class="wrap" id="wrap">
-  <div class="side">
+  <div class="toprow" id="toprow">
+  <div class="side" id="side">
     <div class="card">
       <h1>Node Siting — ZIP3</h1>
       <div class="sub" id="prov">loading…</div>
@@ -262,17 +308,21 @@
       </div>
       <div class="note" id="dimline"></div>
       <button class="btn sec" id="costrun">Update cost</button>
-      <div id="costout"></div>
+      <div class="note" style="margin-top:6px">Full carrier &amp; method grid is in the
+        bottom panel → <b>Rate comparison</b>.</div>
+      <div id="costout" style="display:none"></div>
     </div>
 
     <div class="card" id="vscard">
       <div class="mlabel">Versus</div>
-      <div class="sub" style="margin-bottom:6px">Build a combo on the map, save it, then start a new one. Compare up to 6.</div>
+      <div class="sub" style="margin-bottom:6px">Build a combo on the map, save it, then start a new one.</div>
       <button class="btn" id="vspin">Save this combo</button>
       <button class="btn sec" id="vsnew" style="margin-top:6px">Add new combo</button>
       <button class="btn sec" id="vsclear" style="margin-top:6px">Clear all saved</button>
       <div id="vslist" class="sub" style="margin-top:6px;min-height:14px">No combos saved yet.</div>
-      <div id="vssummary"></div>
+      <div class="note" style="margin-top:6px">Full comparison tables are in the
+        bottom panel — drag its top edge to make it bigger.</div>
+      <div id="vssummary" style="display:none"></div>
     </div>
 
     <div class="card">
@@ -283,7 +333,21 @@
     </div>
   </div>
 
+  <div class="vgrip" id="vgrip" title="Drag to resize sidebar"></div>
   <div class="stage"><div id="map"></div></div>
+  </div>
+
+  <div class="hgrip" id="hgrip" title="Drag to resize · double-click to collapse"></div>
+  <div class="bottom" id="bottom">
+    <div class="btabs" id="btabs">
+      <button class="btab on" data-tab="dist">Zone distribution</button>
+      <button class="btab" data-tab="rate">Rate comparison</button>
+      <button class="btab" data-tab="tmpl">Templates</button>
+      <span style="flex:1"></span>
+      <span class="sub" id="bctx" style="padding-right:8px"></span>
+    </div>
+    <div class="bbody" id="bbody"></div>
+  </div>
 </div>
 
 <div class="tip" id="tip"></div>
@@ -817,6 +881,9 @@ function render(){
   }
   document.getElementById('legend').innerHTML=lg;
   try{ if(typeof renderCost==='function') renderCost(); }catch(e){}
+  try{ if(typeof renderBottom==='function') renderBottom(); }
+  catch(e){ var bb=document.getElementById('bbody');
+            if(bb) bb.innerHTML='<div class="note">bottom err: '+esc(e&&e.stack?e.stack:String(e))+'</div>'; }
   document.getElementById('foot').innerHTML=
     '<b>'+N+'</b> contiguous ZIP3 destinations · <b>'+fmt(POPTOT)+'</b> people'
     +(s.unserved>0?' · '+fmt(Math.round(s.unserved))+' unserved':'');
@@ -1525,13 +1592,391 @@ function renderCost(){
 (function(){
   var b=document.getElementById('costrun');
   if(!b) return;
-  b.onclick=renderCost;
+  b.onclick=function(){ renderCost(); if(typeof renderBottom==='function') renderBottom(); };
   ['pw','pl','pwd','ph'].forEach(function(id){
     var e=document.getElementById(id);
-    if(e) e.onkeydown=function(ev){ if(ev.key==='Enter') renderCost(); };
+    if(e) e.onkeydown=function(ev){ if(ev.key==='Enter'){ renderCost();
+      if(typeof renderBottom==='function') renderBottom(); } };
   });
 })();
 
+
+
+// ===== BOTTOM PANEL ========================================================
+// Mirrors the 'Zip Distribution Analysis' tab of Chad's sheet: carrier x service
+// rows, one column per candidate origin/network, best-in-row highlighted with a
+// delta against the incumbent.
+
+// Carrier grouping + palette come from the sheet's own header colors.
+function carrierOf(svc){
+  if(/^USPS/.test(svc))   return 'usps';
+  if(/^DHL/.test(svc))    return 'dhl';
+  if(/^FedEx/.test(svc))  return 'fedex';
+  if(/^UPS/.test(svc))    return 'ups';
+  if(/^Amazon/.test(svc)) return 'amazon';
+  return 'other';
+}
+var CARLABEL={usps:'USPS',dhl:'DHL',fedex:'FedEx',ups:'UPS',amazon:'Amazon',other:'—'};
+function svcShort(svc){
+  return svc.replace(/^(USPS|DHL|FedEx|UPS|Amazon)\s*/,'').trim() || svc;
+}
+function carBadge(svc){
+  var c=carrierOf(svc);
+  return '<span class="car car-'+c+'">'+CARLABEL[c]+'</span>';
+}
+
+// ---- drag: sidebar width ----
+(function(){
+  var g=document.getElementById('vgrip'), s=document.getElementById('side');
+  if(!g||!s) return;
+  var on=false;
+  g.addEventListener('mousedown',function(e){ on=true; g.classList.add('drag');
+    document.body.style.cursor='col-resize'; e.preventDefault(); });
+  window.addEventListener('mousemove',function(e){
+    if(!on) return;
+    var w=Math.max(240, Math.min(760, e.clientX-12));
+    s.style.width=w+'px'; s.style.flexBasis=w+'px';
+    if(window.map) map.resize();
+  });
+  window.addEventListener('mouseup',function(){
+    if(!on) return; on=false; g.classList.remove('drag');
+    document.body.style.cursor=''; if(window.map) map.resize();
+  });
+})();
+
+// ---- drag: bottom panel height (double-click the grip to collapse) ----
+(function(){
+  var g=document.getElementById('hgrip'), b=document.getElementById('bottom');
+  if(!g||!b) return;
+  var on=false;
+  g.addEventListener('mousedown',function(e){ on=true; g.classList.add('drag');
+    document.body.style.cursor='row-resize'; e.preventDefault(); });
+  window.addEventListener('mousemove',function(e){
+    if(!on) return;
+    var h=Math.max(34, Math.min(window.innerHeight-160, window.innerHeight-e.clientY));
+    b.classList.remove('collapsed');
+    b.style.flexBasis=h+'px';
+    if(window.map) map.resize();
+  });
+  window.addEventListener('mouseup',function(){
+    if(!on) return; on=false; g.classList.remove('drag');
+    document.body.style.cursor=''; if(window.map) map.resize();
+  });
+  g.addEventListener('dblclick',function(){
+    b.classList.toggle('collapsed');
+    if(window.map) setTimeout(function(){ map.resize(); },0);
+  });
+})();
+
+// ---- tabs ----
+var BTAB='dist';
+(function(){
+  var bar=document.getElementById('btabs');
+  if(!bar) return;
+  bar.addEventListener('click',function(e){
+    var b=e.target.closest('.btab'); if(!b) return;
+    [].forEach.call(bar.querySelectorAll('.btab'),function(x){ x.classList.remove('on'); });
+    b.classList.add('on'); BTAB=b.getAttribute('data-tab'); renderBottom();
+  });
+})();
+
+// Columns for the bottom panel = saved combos, plus the live network if it is
+// not already saved. That way the panel is useful before anything is pinned.
+function bottomCols(){
+  var cols = vsPins.map(function(p){
+    return {label:p.label, nodes:p.nodes.slice(), saved:true};
+  });
+  if(nodes.length){
+    var key=nodes.slice().sort().join(',');
+    var dup=vsPins.some(function(p){ return p.nodes.slice().sort().join(',')===key; });
+    if(!dup) cols.push({label:(networkLabel||'Current'), nodes:nodes.slice(), saved:false});
+  }
+  return cols;
+}
+
+function renderBottom(){
+  var body=document.getElementById('bbody');
+  var ctx=document.getElementById('bctx');
+  if(!body) return;
+  var cols=bottomCols();
+  if(ctx) ctx.textContent = cols.length
+      ? cols.length+' network'+(cols.length===1?'':'s')+' compared'
+      : '';
+  // Templates must stay reachable with an empty map — that is exactly when you
+  // want to load a saved comparison.
+  if(BTAB==='tmpl'){ body.innerHTML = tabTemplates(cols); return; }
+  if(!cols.length){
+    body.innerHTML='<div class="note">Place nodes or load a template to populate '
+      +'this panel. <b>Templates</b> tab has saved comparisons ready to go.</div>';
+    return;
+  }
+  cols.forEach(function(c){ c.sc = score(solve(c.nodes)); });
+  if(BTAB==='dist')      body.innerHTML = tabDist(cols);
+  else if(BTAB==='rate') body.innerHTML = tabRate(cols);
+  else                   body.innerHTML = tabTemplates(cols);
+}
+
+// ---- TAB 1: zone distribution, the Excel-style spread ----
+function tabDist(cols){
+  var h='<div class="bsec"><div class="mlabel">Zone distribution — % of US population</div>';
+  h+='<table><thead><tr><th>Network</th><th>Nodes</th><th>Avg zone</th>';
+  for(var z=1;z<=8;z++) h+='<th>Z'+z+'</th>';
+  h+='<th>≤3</th><th>≤4</th><th>≤5</th></tr></thead><tbody>';
+  var bestAvg=Math.min.apply(null,cols.map(function(c){ return c.sc.avg; }));
+  cols.forEach(function(c){
+    var cum=0;
+    h+='<tr><td><div class="nm">'+esc(c.label)+(c.saved?'':' <span class="sub">(live)</span>')+'</div></td>';
+    h+='<td>'+c.nodes.length+'</td>';
+    h+='<td'+(Math.abs(c.sc.avg-bestAvg)<1e-9?' class="cheap"':'')+'>'+c.sc.avg.toFixed(3)+'</td>';
+    var c3=0,c4=0,c5=0;
+    for(var z=1;z<=8;z++){
+      var p=100*(c.sc.counts[z]||0)/POPTOT;
+      if(z<=3)c3+=p; if(z<=4)c4+=p; if(z<=5)c5+=p;
+      // inline bar makes the spread readable at a glance, like conditional formatting
+      h+='<td class="zcell">'+fmtP(p)
+        +'<div class="hbar" style="width:'+Math.max(1,Math.round(p*0.42))+'px"></div></td>';
+    }
+    h+='<td>'+fmtP(c3)+'</td><td>'+fmtP(c4)+'</td><td>'+fmtP(c5)+'</td></tr>';
+  });
+  h+='</tbody></table></div>';
+
+  // How much each added node actually buys you — the "does multi-node pay" view.
+  if(cols.length>1){
+    var base=cols[0];
+    h+='<div class="bsec"><div class="mlabel">Change vs '+esc(base.label)+'</div>';
+    h+='<table><thead><tr><th>Network</th><th>Avg zone</th><th>Δ zone</th>'
+      +'<th>Pop ≤ Z4</th><th>Δ pop ≤ Z4</th></tr></thead><tbody>';
+    var b4=0; for(var z=1;z<=4;z++) b4+=100*(base.sc.counts[z]||0)/POPTOT;
+    cols.forEach(function(c){
+      var p4=0; for(var z=1;z<=4;z++) p4+=100*(c.sc.counts[z]||0)/POPTOT;
+      var dz=c.sc.avg-base.sc.avg, dp=p4-b4;
+      h+='<tr><td>'+esc(c.label)+'</td><td>'+c.sc.avg.toFixed(3)+'</td>'
+        +'<td class="'+(dz<-1e-9?'savepos':(dz>1e-9?'saveneg':''))+'">'
+        +(Math.abs(dz)<1e-9?'—':(dz>0?'+':'')+dz.toFixed(3))+'</td>'
+        +'<td>'+fmtP(p4)+'</td>'
+        +'<td class="'+(dp>1e-9?'savepos':(dp<-1e-9?'saveneg':''))+'">'
+        +(Math.abs(dp)<1e-9?'—':(dp>0?'+':'')+fmtP(dp))+'</td></tr>';
+    });
+    h+='</tbody></table></div>';
+  }
+  return h;
+}
+
+
+// ---- TAB 2: rate comparison, the 'Zip Distribution Analysis' grid ----
+// Rows = carrier x service (sheet order, colored by carrier).
+// Cols = each network. Cheapest cell per row is highlighted, and the delta is
+// measured against the FIRST column (the incumbent), matching how the sheet
+// reads "Delta from Springfield".
+function tabRate(cols){
+  if(!RATES) return '<div class="note">No rate table in this build.</div>';
+  var pkg=readPkg();
+  var svcs=Object.keys(RATES.services).sort(function(a,b){
+    var oa=['usps','dhl','fedex','ups','amazon','other'].indexOf(carrierOf(a));
+    var ob=['usps','dhl','fedex','ups','amazon','other'].indexOf(carrierOf(b));
+    return oa-ob || a.localeCompare(b);
+  });
+
+  var grid={};            // svc -> [ {avg, bw, missing} per col ]
+  svcs.forEach(function(s){
+    grid[s]=cols.map(function(c){ return expectedCost(c.sc, s, pkg); });
+  });
+  var live=svcs.filter(function(s){
+    return grid[s].some(function(r){ return r.avg!==null; });
+  });
+
+  var h='<div class="bsec"><div class="mlabel">Lowest-cost carrier &amp; method — '
+    +pkg.w+' lb, '+pkg.l+'×'+pkg.wd+'×'+pkg.h+' in · billed rates</div>';
+
+  // Headline: the cheapest service for each network, and what multi-node saves.
+  var winners=cols.map(function(c,ci){
+    var bs=null;
+    live.forEach(function(s){
+      var v=grid[s][ci].avg;
+      if(v!==null && (bs===null || v<grid[bs][ci].avg)) bs=s;
+    });
+    return bs;
+  });
+  h+='<table><thead><tr><th>Network</th><th>Cheapest method</th><th>$ / pkg</th>'
+    +'<th>Δ vs '+esc(cols[0].label)+'</th><th>Avg zone</th></tr></thead><tbody>';
+  var baseCost = winners[0]!==null ? grid[winners[0]][0].avg : null;
+  cols.forEach(function(c,ci){
+    var w=winners[ci];
+    var v=(w!==null)?grid[w][ci].avg:null;
+    var d=(v!==null&&baseCost!==null)?v-baseCost:null;
+    h+='<tr class="crow-'+(w?carrierOf(w):'other')+'"><td>'+esc(c.label)+'</td>'
+      +'<td>'+(w?carBadge(w)+' '+esc(svcShort(w)):'—')+'</td>'
+      +'<td class="cheap">'+(v!==null?'$'+v.toFixed(2):'—')+'</td>'
+      +'<td class="'+(d!==null&&d<-1e-9?'savepos':(d!==null&&d>1e-9?'saveneg':''))+'">'
+      +(d===null?'—':(Math.abs(d)<1e-9?'—':(d>0?'+$':'-$')+Math.abs(d).toFixed(2)))+'</td>'
+      +'<td>'+c.sc.avg.toFixed(3)+'</td></tr>';
+  });
+  h+='</tbody></table></div>';
+
+  // Full grid: every carrier/service against every network.
+  h+='<div class="bsec"><div class="mlabel">All carriers &amp; methods</div>';
+  h+='<table><thead><tr><th>Carrier</th><th>Method</th><th>Bill lb</th>';
+  cols.forEach(function(c){ h+='<th>'+esc(c.label)+'</th>'; });
+  if(cols.length>1) h+='<th>Best</th><th>Δ best vs '+esc(cols[0].label)+'</th>';
+  h+='</tr></thead><tbody>';
+  live.forEach(function(s){
+    var cells=grid[s];
+    var vals=cells.map(function(r){ return r.avg; }).filter(function(v){ return v!==null; });
+    var best=vals.length?Math.min.apply(null,vals):null;
+    var bw=null;
+    for(var i=0;i<cells.length;i++){ if(cells[i].avg!==null){ bw=cells[i].bw; break; } }
+    h+='<tr class="crow-'+carrierOf(s)+'"><td>'+carBadge(s)+'</td>'
+      +'<td>'+esc(svcShort(s))+(bw&&bw.dimApplied?' <span class="sub">DIM</span>':'')+'</td>'
+      +'<td>'+(bw?bw.bw.toFixed(2):'—')+'</td>';
+    cells.forEach(function(r){
+      if(r.avg===null){ h+='<td class="sub">n/a</td>'; return; }
+      var isb=(best!==null&&Math.abs(r.avg-best)<1e-9);
+      h+='<td'+(isb?' class="cheap"':'')+'>$'+r.avg.toFixed(2)+'</td>';
+    });
+    if(cols.length>1){
+      var b0=cells[0].avg;
+      var d=(best!==null&&b0!==null)?best-b0:null;
+      h+='<td class="cheap">'+(best!==null?'$'+best.toFixed(2):'—')+'</td>'
+        +'<td class="'+(d!==null&&d<-1e-9?'savepos':'')+'">'
+        +(d===null?'—':(Math.abs(d)<1e-9?'—':'-$'+Math.abs(d).toFixed(2)))+'</td>';
+    }
+    h+='</tr>';
+  });
+  h+='</tbody></table>';
+  h+='<div class="note" style="margin-top:6px">Each cell is the expected billed cost '
+    +'per package for that network\'s live zone mix. "n/a" = the carrier does not '
+    +'publish that billable weight. DIM = dimensional weight is driving the rate.</div>';
+  h+='</div>';
+  return h;
+}
+
+
+// ---- TAB 3: saved comparison templates ----
+// Two sources:
+//  * BUILT-IN: the origin sets Chad already reasons about in the sheet
+//    (Springfield incumbent, the common 2- and 3-node builds), plus the solver's
+//    own optimum at each k so "best possible" is always one click away.
+//  * CUSTOM: whatever he saves from the current comparison, kept in
+//    localStorage so it survives a reload.
+var TPL_KEY='nodesiting.templates.v1';
+
+function builtinTemplates(){
+  var out=[];
+  // Incumbent + the single-node alternatives he lists as columns in the sheet.
+  out.push({name:'Springfield only (incumbent)', group:'Single node',
+            sets:[['658']]});
+  out.push({name:'Common single origins', group:'Single node',
+            sets:[['658'],['902'],['889'],['375'],['303'],['190'],['337']]});
+  // Solver optima per k, pulled live from the preset payload
+  // (shape: DATA.presets.top[k] = [{avg, nodes, label, regions}, ...]).
+  var TOP=(DATA.presets&&DATA.presets.top)?DATA.presets.top:{};
+  [1,2,3,4,5].forEach(function(k){
+    var arr=TOP[String(k)];
+    if(!arr||!arr.length) return;
+    out.push({name:'Best '+k+'-node options', group:'Optimal',
+              sets:arr.slice(0,5).map(function(p){ return p.nodes.slice(); }),
+              labels:arr.slice(0,5).map(function(p){ return p.label||null; })});
+  });
+  // Incumbent vs adding one, two, three — the core "does multi-node pay" story.
+  var opt=function(k){
+    var a=TOP[String(k)];
+    return (a&&a.length)?a[0].nodes.slice():null;
+  };
+  var ladder=[['658']];
+  [2,3,4].forEach(function(k){ var o=opt(k); if(o) ladder.push(o); });
+  if(ladder.length>1) out.push({name:'Springfield → 2 → 3 → 4 nodes',
+                                group:'Scaling', sets:ladder});
+  return out;
+}
+
+function customTemplates(){
+  try{ return JSON.parse(localStorage.getItem(TPL_KEY)||'[]'); }catch(e){ return []; }
+}
+function saveCustomTemplates(list){
+  try{ localStorage.setItem(TPL_KEY, JSON.stringify(list)); }catch(e){}
+}
+
+function applyTemplate(sets, labels){
+  // Replace the whole comparison set: a template IS the comparison.
+  vsPins=[];
+  sets.forEach(function(ns,i){
+    var lb=(labels&&labels[i]) ? labels[i] : labelForNodes(ns);
+    vsPins.push({id:'p'+(++vsSeq), label:lb, nodes:ns.slice(), n:ns.length});
+  });
+  // Load the first set onto the map so the view matches the comparison.
+  if(sets.length){ nodes=sets[0].slice(); networkLabel=vsPins[0].label; }
+  render(); renderVersus(); renderBottom();
+}
+
+// Name a node set the way the sheet does: "658 Springfield", joined with 'and'.
+function labelForNodes(ns){
+  return ns.map(function(z){
+    var nm=zipName(z);
+    return nm ? (z+' '+nm) : z;
+  }).join(' + ');
+}
+
+function tabTemplates(cols){
+  var h='<div class="bsec"><div class="mlabel">Saved comparisons</div>'
+    +'<div class="note" style="margin-bottom:8px">One click loads a set of networks '
+    +'into the comparison so you can show a client the same story every time.</div>';
+  h+='<table><thead><tr><th>Template</th><th>Group</th><th>Networks</th><th></th>'
+    +'</tr></thead><tbody>';
+  var bi=builtinTemplates();
+  bi.forEach(function(tp,i){
+    h+='<tr><td>'+esc(tp.name)+'</td><td class="sub">'+esc(tp.group)+'</td>'
+      +'<td>'+tp.sets.length+'</td>'
+      +'<td><button class="btn sec tplgo" data-kind="b" data-i="'+i+'"'
+      +' style="padding:3px 10px;margin:0;width:auto">Load</button></td></tr>';
+  });
+  var cu=customTemplates();
+  cu.forEach(function(tp,i){
+    h+='<tr><td>'+esc(tp.name)+'</td><td class="sub">Custom</td>'
+      +'<td>'+tp.sets.length+'</td>'
+      +'<td><button class="btn sec tplgo" data-kind="c" data-i="'+i+'"'
+      +' style="padding:3px 10px;margin:0;width:auto">Load</button>'
+      +' <button class="btn sec tpldel" data-i="'+i+'"'
+      +' style="padding:3px 8px;margin:0;width:auto">✕</button></td></tr>';
+  });
+  h+='</tbody></table></div>';
+
+  h+='<div class="bsec"><div class="mlabel">Save the current comparison</div>'
+    +'<div class="pkgrow" style="justify-content:flex-start">'
+    +'<input type="text" id="tplname" placeholder="Name this comparison…"'
+    +' style="flex:1;max-width:320px;padding:5px 8px;background:#12151c;color:var(--text);'
+    +'border:1px solid var(--line);border-radius:5px;font-size:12px">'
+    +'<button class="btn sec" id="tplsave" style="width:auto;margin:0;padding:5px 12px">Save</button>'
+    +'</div><div class="note">Saves the '+cols.length+' network'
+    +(cols.length===1?'':'s')+' currently compared. Stored in this browser.</div></div>';
+  return h;
+}
+
+// delegated handlers for the templates tab
+document.addEventListener('click',function(e){
+  var go=e.target.closest('.tplgo');
+  if(go){
+    var i=+go.getAttribute('data-i');
+    var list=(go.getAttribute('data-kind')==='b')?builtinTemplates():customTemplates();
+    if(list[i]) applyTemplate(list[i].sets, list[i].labels);
+    return;
+  }
+  var del=e.target.closest('.tpldel');
+  if(del){
+    var list=customTemplates();
+    list.splice(+del.getAttribute('data-i'),1);
+    saveCustomTemplates(list); renderBottom();
+    return;
+  }
+  if(e.target.id==='tplsave'){
+    var nm=(document.getElementById('tplname')||{}).value;
+    nm=(nm||'').trim();
+    var cols=bottomCols();
+    if(!nm || !cols.length) return;
+    var list=customTemplates();
+    list.push({name:nm, sets:cols.map(function(c){ return c.nodes.slice(); })});
+    saveCustomTemplates(list); renderBottom();
+  }
+});
 
 function buildPresets(){
   PRE = activePresets();
