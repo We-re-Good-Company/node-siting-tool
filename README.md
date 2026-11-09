@@ -5,7 +5,8 @@ Self-contained interactive map for fulfillment node placement.
 - Population-weighted USPS zone averages
 - Time-in-transit overlays (business days), two kinds kept separate:
   - **Carrier-stated** (works from any node): USPS Ground Advantage / Priority / First-Class,
-    UPS Ground / Next Day / 2nd Day / 3 Day Select, FedEx Ground, DHL eCommerce Parcel
+    UPS Ground / Next Day / 2nd Day / 3 Day Select, FedEx Ground, Amazon Shipping Ground
+    (Springfield only — Amazon quotes only from our pickup), DHL eCommerce Parcel
     Ground / Expedited / Expedited Max (DHL uses the injection DC nearest the node)
   - **Measured** (Springfield node only): our own parcels, carrier possession scan → delivered,
     95% plan days, for UPS Ground / Ground Saver, FedEx Ground / Home Delivery / Ground Economy,
